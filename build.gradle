@@ -1,0 +1,59 @@
+import org.gradle.internal.os.OperatingSystem
+
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.4.0'
+}
+
+repositories {
+    mavenCentral()
+    jcenter()
+    maven {
+        url "https://jitpack.io"
+    }
+}
+
+group 'org.jglrxavpok'
+version '1.0-SNAPSHOT'
+
+switch (OperatingSystem.current()) {
+    case OperatingSystem.LINUX:
+        project.ext.lwjglNatives = "natives-linux"
+        break
+    case OperatingSystem.MAC_OS:
+        project.ext.lwjglNatives = "natives-macos"
+        break
+    case OperatingSystem.WINDOWS:
+        project.ext.lwjglNatives = "natives-windows"
+        break
+}
+
+dependencies {
+    implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+
+    implementation "org.lwjgl:lwjgl"
+    implementation "org.lwjgl:lwjgl-glfw"
+    implementation "org.lwjgl:lwjgl-jemalloc"
+    implementation "org.lwjgl:lwjgl-openal"
+    implementation "org.lwjgl:lwjgl-opengl"
+    runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-jemalloc::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-openal::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
+    implementation "org.joml:joml:${jomlVersion}"
+
+    implementation "io.netty:netty-all:4.1.51.Final"
+
+    implementation "com.github.jglrxavpok:Hephaistos:1.0.5"
+
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:1.4.0"
+
+    // https://mvnrepository.com/artifact/junit/junit
+    testCompile group: 'junit', name: 'junit', version: '4.13'
+}
+compileKotlin {
+    kotlinOptions {
+        freeCompilerArgs = ["-Xinline-classes", "-Xopt-in=kotlin.RequiresOptIn"]
+    }
+}
