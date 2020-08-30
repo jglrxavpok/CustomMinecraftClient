@@ -80,8 +80,9 @@ enum class DataType(private val writingFunction: (ByteBuf, Any?) -> Unit, privat
             }
         },
         { buf ->
-            val reader = NBTReader(ByteBufInputStream(buf), compressed = false)
-            reader.readNamed().second
+            NBTReader(ByteBufInputStream(buf), compressed = false).use {
+                it.readNamed().second
+            }
         }
     ),
     Position(
