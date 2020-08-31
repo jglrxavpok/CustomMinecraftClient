@@ -116,9 +116,27 @@ enum class DataType(private val writingFunction: (ByteBuf, Any?) -> Unit, privat
         { buf -> TODO() }
     ),
     ByteArray(
+        { buf, value ->
+            buf.writeBytes(value as kotlin.ByteArray)
+        },
+        { buf ->
+            val length = buf.writerIndex()-buf.readerIndex()
+            val array = kotlin.ByteArray(length)
+            buf.readBytes(array)
+            array
+        }
+    ),
+
+    Recipe(
         { buf, value -> TODO() },
         { buf -> TODO() }
-    );
+    ),
+
+    Tag(
+        { buf, value -> value as org.jglrxavpok.mcclient.game.NetworkTag; value.write(buf) },
+        { buf -> org.jglrxavpok.mcclient.game.NetworkTag.read(buf) }
+    )
+    ;
 
     fun write(buffer: ByteBuf, value: Any?) {
         writingFunction(buffer, value)

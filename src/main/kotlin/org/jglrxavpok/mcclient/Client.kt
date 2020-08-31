@@ -10,6 +10,7 @@ import org.jglrxavpok.mcclient.network.handshake.HandshakePacket
 import org.jglrxavpok.mcclient.network.handshake.NetworkState
 import org.jglrxavpok.mcclient.network.login.LoginStart
 import org.jglrxavpok.mcclient.network.status.StatusRequestPacket
+import org.jglrxavpok.mcclient.rendering.GameRenderer
 import kotlin.concurrent.thread
 
 /**
@@ -25,6 +26,8 @@ object Client: ChannelInitializer<SocketChannel>() {
             //requestStatus(it)
             login(it, "jglrxavpok")
         }
+        GameRenderer.init()
+        GameRenderer.loop()
     }
 
     /**

@@ -3,54 +3,11 @@ package org.jglrxavpok.mcclient.network
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandlerContext
 import org.jglrxavpok.mcclient.network.data.DataType
-import org.jglrxavpok.mcclient.network.handshake.HandshakePacket
-import org.jglrxavpok.mcclient.network.handshake.NetworkState
-import org.jglrxavpok.mcclient.network.login.LoginStart
-import org.jglrxavpok.mcclient.network.login.LoginSuccess
-import org.jglrxavpok.mcclient.network.login.SetCompression
-import org.jglrxavpok.mcclient.network.play.JoinGame
-import org.jglrxavpok.mcclient.network.status.StatusRequestPacket
-import org.jglrxavpok.mcclient.network.status.StatusResponsePacket
 import java.lang.RuntimeException
 import kotlin.reflect.*
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
-
-/**
- * Registries for packets, based on the current protocol type
- */
-object PacketRegistries {
-    val clientBoundHandshake = PacketRegistry("ClientBound Handshake")
-    val serverBoundHandshake = PacketRegistry("ServerBound Handshake")
-        .register(HandshakePacket::class, 0x00)
-
-    val clientBoundStatus = PacketRegistry("ClientBound Status")
-        .register(StatusResponsePacket::class, 0x00)
-    val serverBoundStatus = PacketRegistry("ServerBound Status")
-        .register(StatusRequestPacket::class, 0x00)
-
-    val clientBoundLogin = PacketRegistry("ClientBound Login")
-            .register(LoginSuccess::class, 0x02)
-            .register(SetCompression::class, 0x03)
-    val serverBoundLogin = PacketRegistry("ServerBound Login")
-            .register(LoginStart::class, 0x00)
-
-    val clientBoundPlay = PacketRegistry("ClientBound Play")
-            .register(JoinGame::class, 0x24)
-    val serverBoundPlay = PacketRegistry("ServerBound Play")
-
-    fun getRegistry(state: NetworkState, direction: NetworkDirection): PacketRegistry {
-        return when(state) {
-            NetworkState.Handshake -> if(direction == NetworkDirection.ClientBound) clientBoundHandshake else serverBoundHandshake
-            NetworkState.Status -> if(direction == NetworkDirection.ClientBound) clientBoundStatus else serverBoundStatus
-            NetworkState.Login -> if(direction == NetworkDirection.ClientBound) clientBoundLogin else serverBoundLogin
-            NetworkState.Play -> if(direction == NetworkDirection.ClientBound) clientBoundPlay else serverBoundPlay
-
-            else -> TODO()
-        }
-    }
-}
 
 interface Packet {
     companion object {
@@ -140,34 +97,6 @@ interface ServerPacket: Packet {
      * What does this packet do?
      */
     fun handle(networkSettings: NetworkSettings, ctx: ChannelHandlerContext)
-}
-
-class PacketRegistry(val name: String) {
-    private val class2id = mutableMapOf<KClass<out Packet>, Int>()
-    private val id2class = mutableMapOf<Int, KClass<out Packet>>()
-
-    fun register(klass: KClass<out Packet>, id: Int): PacketRegistry {
-        class2id[klass] = id
-        id2class[id] = klass
-        return this
-    }
-
-    /**
-     * Returns the protocol ID used for the given packet
-     */
-    fun getID(msg: Packet): Int {
-        return class2id[msg::class] ?: error("Unregistered packet type: $msg in $name")
-    }
-
-    /**
-     * Instantiate a new Packet from the given id
-     *
-     * Throws if the ID is not known
-     */
-    fun new(id: Int): Packet {
-        val klass = id2class[id] ?: error("Unknown packet ID: $id (0x${id.toString(16)}) in $name")
-        return klass.constructors.first().call()
-    }
 }
 
 class UnknownPacket(val id: Int, val cause: Throwable): ServerPacket {

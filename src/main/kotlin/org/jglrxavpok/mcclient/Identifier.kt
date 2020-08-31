@@ -2,6 +2,9 @@ package org.jglrxavpok.mcclient
 
 class Identifier(val domain: String, val path: String) {
 
+    companion object {
+        val None = Identifier("none:none")
+    }
     // TODO: validation
 
     constructor(id: String): this(

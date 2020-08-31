@@ -1,4 +1,4 @@
-package org.jglrxavpok.mcclient.network.play
+package org.jglrxavpok.mcclient.network.play.clientbound
 
 import io.netty.channel.ChannelHandlerContext
 import org.jglrxavpok.hephaistos.nbt.NBTCompound
@@ -23,8 +23,9 @@ class JoinGame: ServerPacket {
     @Serializable(9, DataType.VarInt) var maxPlayers: Int = 0
     @Serializable(10, DataType.VarInt) var viewDistance: Int = 0
     @Serializable(11, DataType.Boolean) var reducedDebugInfo: Boolean = false
-    @Serializable(12, DataType.Boolean) var isDebugWorld: Boolean = false
-    @Serializable(13, DataType.Boolean) var isFlatWorld: Boolean = false
+    @Serializable(12, DataType.Boolean) var enableRespawnScreen: Boolean = false
+    @Serializable(13, DataType.Boolean) var isDebugWorld: Boolean = false
+    @Serializable(14, DataType.Boolean) var isFlatWorld: Boolean = false
 
     override fun handle(networkSettings: NetworkSettings, ctx: ChannelHandlerContext) {
         println("EntityID: $entityId")
@@ -37,10 +38,10 @@ class JoinGame: ServerPacket {
         println("World name: $worldName")
         println("Hashed seed: $hashedSeed")
         println("Max Players: $maxPlayers")
-        println("Max Players: $viewDistance")
+        println("View distance: $viewDistance")
         println("reducedDebugInfo: $reducedDebugInfo")
+        println("enableRespawnScreen: $enableRespawnScreen")
         println("isDebugWorld: $isDebugWorld")
         println("isFlatWorld: $isFlatWorld")
-        TODO("Not yet implemented")
     }
 }
