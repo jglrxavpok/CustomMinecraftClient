@@ -35,6 +35,7 @@ object PacketRegistries {
             .register(PluginMessage::class, 0x17)
             .register(EntityStatus::class, 0x1A)
             .register(UnloadChunk::class, 0x1C)
+            .register(ChunkData::class, 0x20)
             .register(JoinGame::class, 0x24)
             .register(PlayerAbilitiesClientBound::class, 0x30)
             .register(SetPlayerPositionAndLook::class, 0x34)

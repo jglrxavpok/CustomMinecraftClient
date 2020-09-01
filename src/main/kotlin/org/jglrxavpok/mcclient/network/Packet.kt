@@ -97,11 +97,15 @@ interface ServerPacket: Packet {
      * What does this packet do?
      */
     fun handle(networkSettings: NetworkSettings, ctx: ChannelHandlerContext)
+
+    override fun writeTo(buffer: ByteBuf) {
+        error("Not supposed to write ServerPackets")
+    }
 }
 
 class UnknownPacket(val id: Int, val cause: Throwable): ServerPacket {
     override fun handle(networkSettings: NetworkSettings, ctx: ChannelHandlerContext) {
-        cause.printStackTrace()
-        error("Unknown packet: $id (0x${id.toString(16)})")
+/*        cause.printStackTrace()
+        error("Unknown packet: $id (0x${id.toString(16)})")*/
     }
 }

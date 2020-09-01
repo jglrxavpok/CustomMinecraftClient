@@ -1,6 +1,8 @@
 package org.jglrxavpok.mcclient.rendering
 
 import org.jglrxavpok.mcclient.game.world.World
+import org.joml.Quaternionf
+import org.joml.Vector3f
 
 object WorldRenderer {
 

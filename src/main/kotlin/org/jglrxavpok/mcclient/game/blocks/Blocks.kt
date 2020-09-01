@@ -3,14 +3,20 @@ package org.jglrxavpok.mcclient.game.blocks
 // TODO: autogen
 enum class Blocks {
     Air,
-    Stone;
+    Stone,
+    Dirt,
+    Grass,
+    ;
 
     companion object {
         fun fromID(id: Int): Blocks {
             // TODO
-            if(id == 0)
-                return Air
-            return Stone
+            return when(id) {
+                0 -> Air
+                9 -> Grass
+                10 -> Dirt
+                else -> Stone
+            }
         }
     }
 }

@@ -6,4 +6,8 @@ object Game {
 
     val world = World()
 
+    init {
+
+    }
+
 }

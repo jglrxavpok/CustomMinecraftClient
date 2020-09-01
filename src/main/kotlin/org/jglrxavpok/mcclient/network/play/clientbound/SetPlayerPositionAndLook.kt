@@ -5,6 +5,8 @@ import org.jglrxavpok.mcclient.network.NetworkSettings
 import org.jglrxavpok.mcclient.network.Serializable
 import org.jglrxavpok.mcclient.network.ServerPacket
 import org.jglrxavpok.mcclient.network.data.DataType
+import org.jglrxavpok.mcclient.rendering.GameRenderer
+import org.jglrxavpok.mcclient.rendering.WorldRenderer
 
 class SetPlayerPositionAndLook: ServerPacket {
 
@@ -17,6 +19,8 @@ class SetPlayerPositionAndLook: ServerPacket {
     @Serializable(6, DataType.VarInt) var teleportID: Int = 0
 
     override fun handle(networkSettings: NetworkSettings, ctx: ChannelHandlerContext) {
+        WorldRenderer.camera.position.set(x, y, z)
+        // TODO: rotation
         println("set position and look $x, $y, $z")
     }
 }

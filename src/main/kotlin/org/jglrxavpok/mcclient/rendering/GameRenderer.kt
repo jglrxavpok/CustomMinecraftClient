@@ -21,8 +21,30 @@ object GameRenderer {
         glfwMakeContextCurrent(glfwWindow)
 
         GL.createCapabilities()
-        GLUtil.setupDebugMessageCallback()
+    //    GLUtil.setupDebugMessageCallback()
 
+        // TODO: atlases, models, etc.
+
+        glfwSetKeyCallback(glfwWindow) { window, key, scancode, action, mods ->
+            val speed = 10f
+            if(key == GLFW_KEY_W) {
+                WorldRenderer.camera.position.add(0f, 0f, -speed)
+            }
+            if(key == GLFW_KEY_A) {
+                WorldRenderer.camera.position.add(-speed, 0f, 0f)
+            }
+            if(key == GLFW_KEY_D) {
+                WorldRenderer.camera.position.add(speed, 0f, 0f)
+            }
+            if(key == GLFW_KEY_S) {
+                WorldRenderer.camera.position.add(0f, 0f, speed)
+            }
+
+
+            if(key == GLFW_KEY_R && action == GLFW_PRESS) {
+                WorldRenderer.chunkRenderer.forceRerender()
+            }
+        }
         WorldRenderer.init()
     }
 
@@ -38,6 +60,8 @@ object GameRenderer {
         // TODO: use framebuffer?
         glClearColor(0f, 0f, 0f, 1f)
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+        glEnable(GL_DEPTH_TEST)
+
         WorldRenderer.render(Game.world)
     }
 }
