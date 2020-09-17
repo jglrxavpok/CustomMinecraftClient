@@ -15,4 +15,12 @@ data class Identifier(val domain: String, val path: String) {
     override fun toString(): String {
         return "$domain:$path"
     }
+
+    fun withExtension(ext: String): Identifier {
+        return Identifier("${toString()}.$ext")
+    }
+
+    fun prependPath(prefix: String): Identifier {
+        return Identifier(domain, "$prefix/$path")
+    }
 }

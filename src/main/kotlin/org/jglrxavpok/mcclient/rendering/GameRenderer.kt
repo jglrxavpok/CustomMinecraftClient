@@ -26,7 +26,7 @@ object GameRenderer {
         // TODO: atlases, models, etc.
 
         glfwSetKeyCallback(glfwWindow) { window, key, scancode, action, mods ->
-            val speed = 10f
+            val speed = 1f
             if(key == GLFW_KEY_W) {
                 WorldRenderer.camera.position.add(0f, 0f, -speed)
             }

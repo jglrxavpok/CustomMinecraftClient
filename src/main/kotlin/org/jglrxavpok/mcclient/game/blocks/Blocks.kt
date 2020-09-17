@@ -8,6 +8,8 @@ enum class Blocks {
     Grass,
     ;
 
+    val defaultState = BlockState()
+
     companion object {
         fun fromID(id: Int): Blocks {
             // TODO

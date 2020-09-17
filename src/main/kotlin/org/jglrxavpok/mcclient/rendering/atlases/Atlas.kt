@@ -4,7 +4,6 @@ import org.jglrxavpok.mcclient.Identifier
 import org.jglrxavpok.mcclient.rendering.Texture
 import java.awt.Graphics2D
 import java.awt.image.BufferedImage
-import java.awt.image.BufferedImageOp
 import java.io.File
 import javax.imageio.ImageIO
 import kotlin.math.ceil
@@ -68,7 +67,7 @@ class Atlas(private val images: Map<Identifier, () -> BufferedImage>) {
             atlasGraphics!!.drawImage(image, startX, startY, null)
 
             val sprite = AtlasSprite(
-                    (startX.toFloat()+0.5f)/totalWidth, (startY.toFloat()+0.5f)/totalHeight,
+                    startX.toFloat() / totalWidth, startY.toFloat() / totalHeight,
                     (startX.toFloat()+spriteWidth)/totalWidth, (startY.toFloat()+spriteHeight)/totalHeight
             )
             sprites += id to sprite
