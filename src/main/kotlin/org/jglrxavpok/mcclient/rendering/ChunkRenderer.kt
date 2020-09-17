@@ -1,14 +1,17 @@
 package org.jglrxavpok.mcclient.rendering
 
+import org.jglrxavpok.mcclient.IO
+import org.jglrxavpok.mcclient.Identifier
 import org.jglrxavpok.mcclient.game.blocks.Blocks
 import org.jglrxavpok.mcclient.game.world.Chunk
 import org.jglrxavpok.mcclient.game.world.ChunkSection
+import org.jglrxavpok.mcclient.rendering.atlases.Atlas
 import org.jglrxavpok.mcclient.rendering.atlases.AtlasSprite
 import javax.imageio.ImageIO
 
 class ChunkRenderer(val camera: Camera) {
 
-    private lateinit var blockAtlas: Texture
+    private lateinit var blockAtlas: Atlas
     lateinit var chunkShader: Shader
     private var meshes = HashMap<ChunkSection, Mesh>()
 
@@ -17,7 +20,11 @@ class ChunkRenderer(val camera: Camera) {
         chunkShader.use {
             it.updateUniform("albedo", 0)
         }
-        blockAtlas = Texture(ImageIO.read(javaClass.getResourceAsStream("/textures/blocks.png")))
+        blockAtlas = Atlas(mapOf(
+                Identifier("minecraft:stone") to { IO.openStream(Identifier("minecraft:textures/block/stone.png")).use { ImageIO.read(it) } },
+                Identifier("minecraft:dirt") to { IO.openStream(Identifier("minecraft:textures/block/dirt.png")).use { ImageIO.read(it) } },
+                Identifier("minecraft:grass") to { IO.openStream(Identifier("minecraft:textures/block/grass_path_top.png")).use { ImageIO.read(it) } },
+        ))
     }
 
     fun renderChunk(chunk: Chunk) {
@@ -110,24 +117,24 @@ class ChunkRenderer(val camera: Camera) {
 
         // east
         meshBuilder
-                .vertex(x.toFloat()+1f, y.toFloat(), z.toFloat(), sprite.minU, sprite.minV)
-                .vertex(x.toFloat()+1f, y.toFloat()+1f, z.toFloat(), sprite.maxU, sprite.minV)
-                .vertex(x.toFloat()+1f, y.toFloat()+1f, z.toFloat()+1f, sprite.maxU, sprite.maxV)
-                .vertex(x.toFloat()+1f, y.toFloat(), z.toFloat()+1f, sprite.minU, sprite.maxV)
+                .vertex(x.toFloat()+1f, y.toFloat(), z.toFloat(), sprite.maxU, sprite.minV)
+                .vertex(x.toFloat()+1f, y.toFloat()+1f, z.toFloat(), sprite.maxU, sprite.maxV)
+                .vertex(x.toFloat()+1f, y.toFloat()+1f, z.toFloat()+1f, sprite.minU, sprite.maxV)
+                .vertex(x.toFloat()+1f, y.toFloat(), z.toFloat()+1f, sprite.minU, sprite.minV)
 
         // west
         meshBuilder
                 .vertex(x.toFloat(), y.toFloat(), z.toFloat(), sprite.minU, sprite.minV)
-                .vertex(x.toFloat(), y.toFloat()+1f, z.toFloat(), sprite.maxU, sprite.minV)
+                .vertex(x.toFloat(), y.toFloat()+1f, z.toFloat(), sprite.minU, sprite.maxV)
                 .vertex(x.toFloat(), y.toFloat()+1f, z.toFloat()+1f, sprite.maxU, sprite.maxV)
-                .vertex(x.toFloat(), y.toFloat(), z.toFloat()+1f, sprite.minU, sprite.maxV)
+                .vertex(x.toFloat(), y.toFloat(), z.toFloat()+1f, sprite.maxU, sprite.minV)
     }
 
     private fun getSprite(block: Blocks): AtlasSprite {
         // TODO
-        val stoneSprite by lazy { AtlasSprite(16.5f/48f, 0f,32f/48f, 1f) }
-        val dirtSprite by lazy { AtlasSprite(0.5f, 0f, 16f/48f, 1f) }
-        val grassSprite by lazy { AtlasSprite(32.5f/48f, 0f, 1f, 1f) }
+        val stoneSprite by lazy { blockAtlas.getSprite(Identifier("stone")) }
+        val dirtSprite by lazy { blockAtlas.getSprite(Identifier("dirt")) }
+        val grassSprite by lazy { blockAtlas.getSprite(Identifier("grass")) }
         return when(block) {
             Blocks.Dirt -> dirtSprite
             Blocks.Grass -> grassSprite

@@ -9,7 +9,7 @@ class Camera {
     val position = Vector3f(0f, 0f, 0f)
     val rotation = Quaternionf().identity()
     val view = Matrix4f().identity()
-    val projection = Matrix4f().setPerspective(90f, 16f/9f, 0.01f, 1000.0f)
+    val projection = Matrix4f().setPerspective(70f, 16f/9f, 0.01f, 1000.0f)
 
     fun updateShader(shader: Shader) {
         val viewProj by lazy { Matrix4f().identity() }
