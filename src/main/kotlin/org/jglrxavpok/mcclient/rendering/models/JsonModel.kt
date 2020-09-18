@@ -7,6 +7,8 @@ import org.jglrxavpok.mcclient.Identifier
 import org.jglrxavpok.mcclient.game.Direction
 import org.jglrxavpok.mcclient.game.blocks.BlockState
 import org.jglrxavpok.mcclient.rendering.MeshBuilder
+import org.jglrxavpok.mcclient.rendering.WorldRenderer
+import org.joml.Matrix4fStack
 
 class JsonModel(id: Identifier): MinecraftModel {
 
@@ -41,7 +43,7 @@ class JsonModel(id: Identifier): MinecraftModel {
 
     private fun copyParent(parentPath: Identifier) {
         val parent = JsonModelLoader.getOrLoad(parentPath)
-        faces += parent.faces
+        faces += parent.faces.map { Face(it.texture, it.minX, it.minY, it.minZ, it.maxX, it.maxY, it.maxZ) }
         textureMap += parent.textureMap
     }
 
@@ -49,12 +51,12 @@ class JsonModel(id: Identifier): MinecraftModel {
         val from = obj.getAsJsonArray("from").map { it.asDouble }
         val to = obj.getAsJsonArray("to").map { it.asDouble }
 
-        val minX = from[0].toFloat()
-        val minY = from[1].toFloat()
-        val minZ = from[2].toFloat()
-        val maxX = to[0].toFloat()
-        val maxY = to[1].toFloat()
-        val maxZ = to[2].toFloat()
+        val minX = from[0].toFloat()/16f
+        val minY = from[1].toFloat()/16f
+        val minZ = from[2].toFloat()/16f
+        val maxX = to[0].toFloat()/16f
+        val maxY = to[1].toFloat()/16f
+        val maxZ = to[2].toFloat()/16f
         val faceDescriptions = obj.getAsJsonObject("faces")
         for(faceName in Direction.values()) {
             val face = faceDescriptions.getAsJsonObject(faceName.name.toLowerCase()) ?: continue
@@ -62,16 +64,16 @@ class JsonModel(id: Identifier): MinecraftModel {
             val texture = face.get("texture")?.asString ?: "#none"
             val compiledFace = when(faceName) {
                 Direction.North -> {
-                    Face(texture, minX, minY, minZ, maxX, maxY, minZ)
+                    Face(texture, minX, maxY, minZ, maxX, minY, minZ)
                 }
                 Direction.South -> {
-                    Face(texture, minX, minY, maxZ, maxX, maxY, maxZ)
+                    Face(texture, minX, maxY, maxZ, maxX, minY, maxZ)
                 }
                 Direction.East -> {
-                    Face(texture, minX, minY, minZ, minX, maxY, maxZ)
+                    Face(texture, minX, maxY, minZ, minX, minY, maxZ)
                 }
                 Direction.West -> {
-                    Face(texture, maxX, minY, minZ, maxX, maxY, maxZ)
+                    Face(texture, maxX, maxY, minZ, maxX, minY, maxZ)
                 }
                 Direction.Up -> {
                     Face(texture, minX, maxY, minZ, maxX, maxY, maxZ)
@@ -85,38 +87,50 @@ class JsonModel(id: Identifier): MinecraftModel {
     }
 
     private fun resolveTexture(id: String): Identifier {
-        if(id.startsWith("#"))
-            return resolveTexture(id.substring(1))
-        return Identifier(textureMap.getOrDefault(id, "minecraft:missigno"))
+        val value = textureMap.getOrDefault(id, "minecraft:missingno")
+        if(value.startsWith("#")) {
+            return resolveTexture(value)
+        }
+        return Identifier(value);
     }
 
-    override fun fillQuads(meshBuilder: MeshBuilder, state: BlockState, x: Int, y: Int, z: Int) {
+    override fun fillQuads(matrixStack: Matrix4fStack, meshBuilder: MeshBuilder, state: BlockState, x: Int, y: Int, z: Int) {
         for(face in faces) {
-            face.fillQuad(meshBuilder)
+            face.fillQuad(matrixStack, meshBuilder)
         }
     }
 
     override fun textures(): List<Identifier> {
         return textureMap
-                .filter { !it.key.startsWith("#") }
+                .filter { !it.value.startsWith("#") }
                 .map { Identifier(it.value) }
     }
 
     private inner class Face(val texture: String, val minX: Float, val minY: Float, val minZ: Float, val maxX: Float, val maxY: Float, val maxZ: Float) {
 
-        private val resolvedTexture get()= resolveTexture(texture)
+        private val resolvedTexture by lazy { resolveTexture(texture) }
 
-        fun fillQuad(meshBuilder: MeshBuilder) {
-            // TODO: load from atlas
-            val minU = 0f
-            val maxU = 0f
-            val minV = 1f
-            val maxV = 1f
-            meshBuilder
-                    .vertex(minX, minY, minZ, minU, minV)
-                    .vertex(minX, maxY, minZ, minU, maxV)
-                    .vertex(maxX, maxY, maxZ, maxU, maxV)
-                    .vertex(maxX, minY, maxZ, maxU, minV)
+        private val horizontal get() = minY==maxY
+
+        fun fillQuad(matrixStack: Matrix4fStack, meshBuilder: MeshBuilder) {
+            val sprite = WorldRenderer.chunkRenderer.blockAtlas.getSprite(resolvedTexture)
+            val minU = sprite.minU
+            val maxU = sprite.maxU
+            val minV = sprite.minV
+            val maxV = sprite.maxV
+            if(horizontal) {
+                meshBuilder
+                        .vertex(matrixStack, minX, minY, minZ, minU, minV)
+                        .vertex(matrixStack, minX, minY, maxZ, minU, maxV)
+                        .vertex(matrixStack, maxX, minY, maxZ, maxU, maxV)
+                        .vertex(matrixStack, maxX, minY, minZ, maxU, minV)
+            } else {
+                meshBuilder
+                        .vertex(matrixStack, minX, minY, minZ, minU, minV)
+                        .vertex(matrixStack, minX, maxY, minZ, minU, maxV)
+                        .vertex(matrixStack, maxX, maxY, maxZ, maxU, maxV)
+                        .vertex(matrixStack, maxX, minY, maxZ, maxU, minV)
+            }
         }
     }
 }

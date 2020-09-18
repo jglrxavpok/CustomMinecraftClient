@@ -6,25 +6,40 @@ import org.jglrxavpok.mcclient.game.blocks.Blocks
 import org.jglrxavpok.mcclient.game.world.Chunk
 import org.jglrxavpok.mcclient.game.world.ChunkSection
 import org.jglrxavpok.mcclient.rendering.atlases.Atlas
-import org.jglrxavpok.mcclient.rendering.atlases.AtlasSprite
+import org.joml.Matrix4fStack
+import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 
 class ChunkRenderer(val camera: Camera) {
 
-    private lateinit var blockAtlas: Atlas
+    lateinit var blockAtlas: Atlas
+        private set
     lateinit var chunkShader: Shader
+        private set
     private var meshes = HashMap<ChunkSection, Mesh>()
+    private val matrixStack = Matrix4fStack(256).apply { identity() }.pushMatrix()
 
     fun init() {
         chunkShader = Shader("default")
         chunkShader.use {
             it.updateUniform("albedo", 0)
         }
-        blockAtlas = Atlas(mapOf(
-                Identifier("minecraft:stone") to { IO.openStream(Identifier("minecraft:textures/block/stone.png")).use { ImageIO.read(it) } },
-                Identifier("minecraft:dirt") to { IO.openStream(Identifier("minecraft:textures/block/dirt.png")).use { ImageIO.read(it) } },
-                Identifier("minecraft:grass") to { IO.openStream(Identifier("minecraft:textures/block/grass_path_top.png")).use { ImageIO.read(it) } },
-        ))
+
+        val textureMap = mutableMapOf<Identifier, () -> BufferedImage>()
+        for(block in Blocks.values()) {
+            if(block == Blocks.Air)
+                continue
+            val textures = block.model.backingModel.textures()
+            for(t in textures) {
+                if(!textureMap.containsKey(t)) {
+                    textureMap[t] = {
+                        IO.openStream(t.prependPath("textures").withExtension("png")).use(ImageIO::read)
+                    }
+                }
+            }
+        }
+
+        blockAtlas = Atlas(textureMap)
     }
 
     fun renderChunk(chunk: Chunk) {
@@ -63,6 +78,7 @@ class ChunkRenderer(val camera: Camera) {
 
     private fun shouldRender(block: Blocks, section: ChunkSection, x: Int, y: Int, z: Int): Boolean {
         // TODO: section borders
+        // TODO: cullfaces from models
         return when {
             x != 0 && x != 15 && y != 0 && y != 15 && z != 0 && z != 15 -> {
                 val top = Blocks.fromID(section.getBlockID(x,y+1,z))
@@ -86,60 +102,11 @@ class ChunkRenderer(val camera: Camera) {
     private fun renderBlock(block: Blocks, meshBuilder: MeshBuilder, x: Int, y: Int, z: Int) {
         if(block == Blocks.Air)
             return
-        val sprite = getSprite(block)
-        // back
-        meshBuilder
-                .vertex(x.toFloat(), y.toFloat(), z.toFloat(), sprite.minU, sprite.minV)
-                .vertex(x.toFloat()+1f, y.toFloat(), z.toFloat(), sprite.maxU, sprite.minV)
-                .vertex(x.toFloat()+1f, y.toFloat()+1f, z.toFloat(), sprite.maxU, sprite.maxV)
-                .vertex(x.toFloat(), y.toFloat()+1f, z.toFloat(), sprite.minU, sprite.maxV)
-
-        // front
-        meshBuilder
-                .vertex(x.toFloat(), y.toFloat(), z.toFloat()+1f, sprite.minU, sprite.minV)
-                .vertex(x.toFloat()+1f, y.toFloat(), z.toFloat()+1f, sprite.maxU, sprite.minV)
-                .vertex(x.toFloat()+1f, y.toFloat()+1f, z.toFloat()+1f, sprite.maxU, sprite.maxV)
-                .vertex(x.toFloat(), y.toFloat()+1f, z.toFloat()+1f, sprite.minU, sprite.maxV)
-
-        // top
-        meshBuilder
-                .vertex(x.toFloat(), y.toFloat()+1f, z.toFloat(), sprite.minU, sprite.minV)
-                .vertex(x.toFloat()+1f, y.toFloat()+1f, z.toFloat(), sprite.maxU, sprite.minV)
-                .vertex(x.toFloat()+1f, y.toFloat()+1f, z.toFloat()+1f, sprite.maxU, sprite.maxV)
-                .vertex(x.toFloat(), y.toFloat()+1f, z.toFloat()+1f, sprite.minU, sprite.maxV)
-
-        // bottom
-        meshBuilder
-                .vertex(x.toFloat(), y.toFloat(), z.toFloat(), sprite.minU, sprite.minV)
-                .vertex(x.toFloat()+1f, y.toFloat(), z.toFloat(), sprite.maxU, sprite.minV)
-                .vertex(x.toFloat()+1f, y.toFloat(), z.toFloat()+1f, sprite.maxU, sprite.maxV)
-                .vertex(x.toFloat(), y.toFloat(), z.toFloat()+1f, sprite.minU, sprite.maxV)
-
-        // east
-        meshBuilder
-                .vertex(x.toFloat()+1f, y.toFloat(), z.toFloat(), sprite.maxU, sprite.minV)
-                .vertex(x.toFloat()+1f, y.toFloat()+1f, z.toFloat(), sprite.maxU, sprite.maxV)
-                .vertex(x.toFloat()+1f, y.toFloat()+1f, z.toFloat()+1f, sprite.minU, sprite.maxV)
-                .vertex(x.toFloat()+1f, y.toFloat(), z.toFloat()+1f, sprite.minU, sprite.minV)
-
-        // west
-        meshBuilder
-                .vertex(x.toFloat(), y.toFloat(), z.toFloat(), sprite.minU, sprite.minV)
-                .vertex(x.toFloat(), y.toFloat()+1f, z.toFloat(), sprite.minU, sprite.maxV)
-                .vertex(x.toFloat(), y.toFloat()+1f, z.toFloat()+1f, sprite.maxU, sprite.maxV)
-                .vertex(x.toFloat(), y.toFloat(), z.toFloat()+1f, sprite.maxU, sprite.minV)
-    }
-
-    private fun getSprite(block: Blocks): AtlasSprite {
-        // TODO
-        val stoneSprite by lazy { blockAtlas.getSprite(Identifier("stone")) }
-        val dirtSprite by lazy { blockAtlas.getSprite(Identifier("dirt")) }
-        val grassSprite by lazy { blockAtlas.getSprite(Identifier("grass")) }
-        return when(block) {
-            Blocks.Dirt -> dirtSprite
-            Blocks.Grass -> grassSprite
-            else -> stoneSprite
-        }
+        val model = block.model
+        matrixStack.pushMatrix()
+        matrixStack.translate(x.toFloat(), y.toFloat(), z.toFloat())
+        model.backingModel.fillQuads(matrixStack, meshBuilder/*TODO: get block state*/, block.defaultState, x, y, z)
+        matrixStack.popMatrix()
     }
 
     fun forceRerender() {

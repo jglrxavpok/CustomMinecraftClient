@@ -1,10 +1,19 @@
 package org.jglrxavpok.mcclient.rendering
 
+import org.joml.Matrix4fStack
+import org.joml.Vector3f
+
 class MeshBuilder {
 
     private val vertexData = mutableListOf<Float>()
     private val indexData = mutableListOf<Int>()
     private var vertexCount: Int = 0
+
+    fun vertex(matrixStack: Matrix4fStack, x: Float, y: Float, z: Float, u: Float, v: Float): MeshBuilder {
+        val dest by lazy { Vector3f() }
+        matrixStack.transformPosition(x, y, z, dest)
+        return vertex(dest.x, dest.y, dest.z, u, v)
+    }
 
     fun vertex(x: Float, y: Float, z: Float, u: Float, v: Float): MeshBuilder {
         vertexData += x

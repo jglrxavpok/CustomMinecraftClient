@@ -21,7 +21,7 @@ class Atlas(private val images: Map<Identifier, () -> BufferedImage>) {
 
     fun getSprite(id: Identifier): AtlasSprite {
         if(!built) error("Atlas not built yet")
-        return sprites[id] ?: TODO("Handle missing/unknown sprites")
+        return sprites[id] ?: sprites.values.first()//TODO("Handle missing/unknown sprites")
     }
 
     fun getTexture(): Texture {
@@ -34,7 +34,7 @@ class Atlas(private val images: Map<Identifier, () -> BufferedImage>) {
         texture!!.bind()
     }
 
-    fun buildTexture(): Atlas {
+    private fun buildTexture(): Atlas {
         var init = false
 
         var spriteWidth = -1
