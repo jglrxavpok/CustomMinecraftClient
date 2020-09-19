@@ -19,6 +19,7 @@ class Camera {
 
     private fun updateViewMatrix() {
         val eyeHeight = 1.8f
-        view.identity().translate(-position.x(), -(position.y()+eyeHeight), -position.z()).rotate(rotation.conjugate())
+        val rot by lazy { Quaternionf() }
+        view.identity().rotate(rotation.conjugate(rot)).translate(-position.x(), -(position.y()+eyeHeight), -position.z())
     }
 }
