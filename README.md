@@ -13,7 +13,7 @@ Made for education purposes only
             * [ ] Load model rotations
             * [x] Load model faces
             * [x] Load model textures
-        * [ ] Load 
+        * [ ] Load multipart models
     * [x] Render Chunks
     * [ ] Optimize rendering
 
