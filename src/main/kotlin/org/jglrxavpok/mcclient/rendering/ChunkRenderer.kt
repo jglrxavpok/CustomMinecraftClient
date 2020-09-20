@@ -1,8 +1,10 @@
 package org.jglrxavpok.mcclient.rendering
 
+import net.minestom.server.instance.block.Block
 import org.jglrxavpok.mcclient.IO
 import org.jglrxavpok.mcclient.Identifier
-import org.jglrxavpok.mcclient.game.blocks.Blocks
+import org.jglrxavpok.mcclient.game.blocks.getDefaultState
+import org.jglrxavpok.mcclient.game.blocks.getModel
 import org.jglrxavpok.mcclient.game.world.Chunk
 import org.jglrxavpok.mcclient.game.world.ChunkSection
 import org.jglrxavpok.mcclient.rendering.atlases.Atlas
@@ -26,14 +28,19 @@ class ChunkRenderer(val camera: Camera) {
         }
 
         val textureMap = mutableMapOf<Identifier, () -> BufferedImage>()
-        for(block in Blocks.values()) {
-            if(block == Blocks.Air)
+        for(block in Block.values()) {
+            if(block == Block.AIR)
                 continue
-            val textures = block.model.backingModel.textures()
+            val textures = block.getModel().backingModel.textures()
             for(t in textures) {
                 if(!textureMap.containsKey(t)) {
                     textureMap[t] = {
-                        IO.openStream(t.prependPath("textures").withExtension("png")).use(ImageIO::read)
+                        try {
+                            IO.openStream(t.prependPath("textures").withExtension("png")).use(ImageIO::read)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            MissingImage
+                        }
                     }
                 }
             }
@@ -66,7 +73,7 @@ class ChunkRenderer(val camera: Camera) {
         for(y in 0..15) {
             for(z in 0..15) {
                 for(x in 0..15) {
-                    val block = Blocks.fromID(section.getBlockID(x, y, z))
+                    val block = Block.fromStateId(section.getBlockID(x, y, z))
                     if(shouldRender(block, section, x, y, z)) {
                         renderBlock(block, meshBuilder, x+section.x*16, y+section.y*16, z+section.z*16)
                     }
@@ -76,20 +83,20 @@ class ChunkRenderer(val camera: Camera) {
         meshes[section] = meshBuilder.toMesh()
     }
 
-    private fun shouldRender(block: Blocks, section: ChunkSection, x: Int, y: Int, z: Int): Boolean {
+    private fun shouldRender(block: Block, section: ChunkSection, x: Int, y: Int, z: Int): Boolean {
         // TODO: section borders
         // TODO: cullfaces from models
         return when {
             x != 0 && x != 15 && y != 0 && y != 15 && z != 0 && z != 15 -> {
-                val top = Blocks.fromID(section.getBlockID(x,y+1,z))
-                val bottom = Blocks.fromID(section.getBlockID(x,y-1,z))
-                val east = Blocks.fromID(section.getBlockID(x+1,y,z))
-                val west = Blocks.fromID(section.getBlockID(x-1,y+1,z))
-                val north = Blocks.fromID(section.getBlockID(x,y,z-1))
-                val south = Blocks.fromID(section.getBlockID(x,y,z+1))
-                top == Blocks.Air || bottom == Blocks.Air
-                        || east == Blocks.Air || west == Blocks.Air
-                        || north == Blocks.Air || south == Blocks.Air
+                val top = Block.fromStateId(section.getBlockID(x,y+1,z))
+                val bottom = Block.fromStateId(section.getBlockID(x,y-1,z))
+                val east = Block.fromStateId(section.getBlockID(x+1,y,z))
+                val west = Block.fromStateId(section.getBlockID(x-1,y+1,z))
+                val north = Block.fromStateId(section.getBlockID(x,y,z-1))
+                val south = Block.fromStateId(section.getBlockID(x,y,z+1))
+                !top.isSolid || !bottom.isSolid
+                        || !east.isSolid || !west.isSolid
+                        || !north.isSolid || !south.isSolid
             }
 
             else -> true
@@ -99,13 +106,13 @@ class ChunkRenderer(val camera: Camera) {
     // TODO: block states
     // TODO: block faces
     // TODO: use actual models
-    private fun renderBlock(block: Blocks, meshBuilder: MeshBuilder, x: Int, y: Int, z: Int) {
-        if(block == Blocks.Air)
+    private fun renderBlock(block: Block, meshBuilder: MeshBuilder, x: Int, y: Int, z: Int) {
+        if(block == Block.AIR)
             return
-        val model = block.model
+        val model = block.getModel()
         matrixStack.pushMatrix()
         matrixStack.translate(x.toFloat(), y.toFloat(), z.toFloat())
-        model.backingModel.fillQuads(matrixStack, meshBuilder/*TODO: get block state*/, block.defaultState, x, y, z)
+        model.backingModel.fillQuads(matrixStack, meshBuilder/*TODO: get block state*/, block.getDefaultState(), x, y, z)
         matrixStack.popMatrix()
     }
 

@@ -17,6 +17,8 @@ object Input {
     private var backwards = false
     private var strafeLeft = false
     private var strafeRight = false
+    private var goUp = false
+    private var goDown = false
     private var mousePos = Vector2d()
     private var deltaMouse = Vector2d()
     private var yaw = 0f
@@ -42,6 +44,14 @@ object Input {
         if(key == GLFW.GLFW_KEY_S) {
             if(pressed) backwards = true
             if(released) backwards = false
+        }
+        if(key == GLFW.GLFW_KEY_SPACE) {
+            if(pressed) goUp = true
+            if(released) goUp = false
+        }
+        if(key == GLFW.GLFW_KEY_LEFT_SHIFT) {
+            if(pressed) goDown = true
+            if(released) goDown = false
         }
 
 
@@ -80,6 +90,8 @@ object Input {
         if(backwards) direction.add(0f, 0f, -speed)
         if(strafeRight) direction.add(-speed, 0f, 0f)
         if(strafeLeft) direction.add(speed, 0f, 0f)
+        if(goUp) direction.add(0f, -speed, 0f)
+        if(goDown) direction.add(0f, speed, 0f)
 
         direction.rotateY(yaw)
         WorldRenderer.camera.position.add(direction)

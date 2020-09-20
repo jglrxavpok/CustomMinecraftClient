@@ -10,13 +10,13 @@ class Chunk(val x: Int, val z: Int) {
 
 class ChunkSection(val x: Int, val y: Int, val z: Int) {
 
-    private val blocks = IntArray(16*16*16)
+    private val blocks = ShortArray(16*16*16)
 
-    fun getBlockID(x: Int, y: Int, z: Int): Int {
+    fun getBlockID(x: Int, y: Int, z: Int): Short {
         return blocks[index(x, y, z)]
     }
 
-    fun setBlockID(x: Int, y: Int, z: Int, id: Int) {
+    fun setBlockID(x: Int, y: Int, z: Int, id: Short) {
         blocks[index(x, y, z)] = id
     }
 

@@ -22,7 +22,8 @@ class BlockStateModel(val id: Identifier) {
             loadVariants(json.getAsJsonObject("variants"))
         } else {
             // TODO: multipart
-            TODO()
+            System.err.println(">> Multipart is not supported yet: $id")
+            _backingModel = MissingModel
         }
     }
 

@@ -22,11 +22,11 @@ object Client: ChannelInitializer<SocketChannel>() {
 
     @JvmStatic
     fun main(args: Array<String>) {
+        GameRenderer.init()
         setupNetty("127.0.0.1", 25565) {
             //requestStatus(it)
             login(it, "jglrxavpok")
         }
-        GameRenderer.init()
         GameRenderer.loop()
     }
 

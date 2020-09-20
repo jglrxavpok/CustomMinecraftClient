@@ -62,17 +62,43 @@ class Atlas(private val images: Map<Identifier, () -> BufferedImage>) {
                 init = true
             }
 
-            val startX = (index % spritesPerLine) * spriteWidth
-            val startY = (index / spritesPerLine) * spriteHeight
-            atlasGraphics!!.drawImage(image, startX, startY, null)
+            val assumeAnimated = image.height != spriteHeight && image.height % spriteHeight == 0
 
-            val sprite = AtlasSprite(
+            fun addToAtlas(
+                index: Int,
+                image: BufferedImage,
+                id: Identifier
+            ) {
+                val startX = (index % spritesPerLine) * spriteWidth
+                val startY = (index / spritesPerLine) * spriteHeight
+                atlasGraphics!!.drawImage(image, startX, startY, null)
+
+                val sprite = AtlasSprite(
                     startX.toFloat() / totalWidth, startY.toFloat() / totalHeight,
-                    (startX.toFloat()+spriteWidth)/totalWidth, (startY.toFloat()+spriteHeight)/totalHeight
-            )
-            sprites += id to sprite
+                    (startX.toFloat() + spriteWidth) / totalWidth, (startY.toFloat() + spriteHeight) / totalHeight
+                )
+                sprites += id to sprite
+            }
 
-            index++
+            if(assumeAnimated) {
+                val frameCount = image.height/spriteHeight
+                // TODO: handle animated sprites
+/*                for(i in 0 until frameCount) {
+                    val newID = if(i == 0) id else Identifier("${id}_$i")
+                    addToAtlas(index, image.getSubimage(0, i*spriteHeight, spriteWidth, spriteHeight), newID)
+                    index++
+                }*/
+                addToAtlas(index, image.getSubimage(0, 0, spriteWidth, spriteHeight), id)
+                index++
+            } else {
+                addToAtlas(
+                    index,
+                    image,
+                    id
+                )
+
+                index++
+            }
         }
 
         // TODO: debug only

@@ -54,7 +54,7 @@ class ChunkData: ServerPacket {
                 for (x in 0..15) {
                     val index = y*16*16+z*16+x
                     val paletteID = blocks[index]
-                    val blockID = if(palette.isEmpty()) paletteID else palette[paletteID]
+                    val blockID = (if(palette.isEmpty()) paletteID else palette[paletteID]).toShort()
                     chunkSection.setBlockID(x, y, z, blockID)
                 }
             }
