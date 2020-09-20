@@ -9,18 +9,21 @@ class MeshBuilder {
     private val indexData = mutableListOf<Int>()
     private var vertexCount: Int = 0
 
-    fun vertex(matrixStack: Matrix4fStack, x: Float, y: Float, z: Float, u: Float, v: Float): MeshBuilder {
+    fun vertex(matrixStack: Matrix4fStack, x: Float, y: Float, z: Float, u: Float, v: Float, r: Float = 1f, g: Float = 1f, b: Float = 1f): MeshBuilder {
         val dest by lazy { Vector3f() }
         matrixStack.transformPosition(x, y, z, dest)
-        return vertex(dest.x, dest.y, dest.z, u, v)
+        return vertex(dest.x, dest.y, dest.z, u, v, r, g, b)
     }
 
-    fun vertex(x: Float, y: Float, z: Float, u: Float, v: Float): MeshBuilder {
+    fun vertex(x: Float, y: Float, z: Float, u: Float, v: Float, r: Float = 1f, g: Float = 1f, b: Float = 1f): MeshBuilder {
         vertexData += x
         vertexData += y
         vertexData += z
         vertexData += u
         vertexData += v
+        vertexData += r
+        vertexData += g
+        vertexData += b
         vertexCount++
         if(vertexCount % 4 == 0) {
             // 0 1 2

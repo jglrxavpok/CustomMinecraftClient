@@ -45,8 +45,11 @@ class BlockStateModel(val id: Identifier) {
 
     private fun loadModel(modelDescription: JsonObject): MinecraftModel {
         val id = Identifier(modelDescription.get("model").asString)
-        // TODO: random rotations
-        return JsonModelLoader.getOrLoad(id)
+        val model = JsonModelLoader.getOrLoad(id)
+        if(modelDescription.has("x") || modelDescription.has("y")) {
+            return RotatedModel((modelDescription["x"]?.asInt ?: 0)/90 * Math.PI.toFloat()/2f, (modelDescription["y"]?.asInt ?: 0)/90 * Math.PI.toFloat()/2f, model)
+        }
+        return model
     }
 
 

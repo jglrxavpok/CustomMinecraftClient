@@ -5,9 +5,15 @@ import net.minestom.server.instance.block.BlockAlternative
 import org.jglrxavpok.mcclient.BlockStateID
 import org.jglrxavpok.mcclient.Identifier
 import org.jglrxavpok.mcclient.rendering.models.BlockStateModel
+import java.util.concurrent.ConcurrentHashMap
 
-private var models = mutableMapOf<Block, BlockStateModel>()
-private var defaultStates = mutableMapOf<Block, BlockState>()
+private var models = ConcurrentHashMap<Block, BlockStateModel>()
+private var defaultStates = ConcurrentHashMap<Block, BlockState>()
+private var ids = ConcurrentHashMap<Block, Identifier>()
+
+fun Block.getIdentifier() = ids.computeIfAbsent(this) {
+    Identifier(getName())
+}
 
 fun Block.getModel() = models.computeIfAbsent(this) {
     val identifier = Identifier(this.getName())

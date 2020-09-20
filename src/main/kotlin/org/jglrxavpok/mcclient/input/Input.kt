@@ -1,18 +1,15 @@
 package org.jglrxavpok.mcclient.input
 
+import org.jglrxavpok.mcclient.Game
 import org.jglrxavpok.mcclient.rendering.GameRenderer
 import org.jglrxavpok.mcclient.rendering.WorldRenderer
-import org.joml.Quaternionf
 import org.joml.Vector2d
-import org.joml.Vector2f
 import org.joml.Vector3f
 import org.lwjgl.glfw.GLFW
-import org.lwjgl.glfw.GLFWKeyCallback
-import kotlin.math.cos
-import kotlin.math.sin
 
 object Input {
 
+    private var screenshotRequested = false
     private var forward = false
     private var backwards = false
     private var strafeLeft = false
@@ -21,8 +18,8 @@ object Input {
     private var goDown = false
     private var mousePos = Vector2d()
     private var deltaMouse = Vector2d()
-    private var yaw = 0f
-    private var pitch = 0f
+    internal var yaw = 0f
+    internal var pitch = 0f
 
     fun keyCallback(window: Long, key: Int, scancode: Int, action: Int, mods: Int) {
         val speed = 1f
@@ -53,6 +50,9 @@ object Input {
             if(pressed) goDown = true
             if(released) goDown = false
         }
+        if(key == GLFW.GLFW_KEY_F2) {
+            if(pressed) screenshotRequested = true
+        }
 
 
         if(key == GLFW.GLFW_KEY_R && action == GLFW.GLFW_PRESS) {
@@ -60,7 +60,7 @@ object Input {
         }
 
         if(key == GLFW.GLFW_KEY_ESCAPE) {
-            GameRenderer.stop()
+            Game.stop()
         }
     }
 
@@ -77,8 +77,8 @@ object Input {
         val dx = deltaMouse.x*deltaTime
         val dy = deltaMouse.y*deltaTime
         deltaMouse.set(0.0)
-        pitch += -dy.toFloat()*sensitivity
-        yaw += -dx.toFloat()*sensitivity
+        pitch += dy.toFloat()*sensitivity
+        yaw += dx.toFloat()*sensitivity
         WorldRenderer.camera.rotation
                 .identity()
                 .rotateY(yaw)
@@ -86,14 +86,19 @@ object Input {
 
         val speed = 10f*deltaTime.toFloat()
         val direction = Vector3f()
-        if(forward) direction.add(0f, 0f, speed)
-        if(backwards) direction.add(0f, 0f, -speed)
-        if(strafeRight) direction.add(-speed, 0f, 0f)
-        if(strafeLeft) direction.add(speed, 0f, 0f)
-        if(goUp) direction.add(0f, -speed, 0f)
-        if(goDown) direction.add(0f, speed, 0f)
+        if(forward) direction.add(0f, 0f, -speed)
+        if(backwards) direction.add(0f, 0f, speed)
+        if(strafeRight) direction.add(speed, 0f, 0f)
+        if(strafeLeft) direction.add(-speed, 0f, 0f)
+        if(goUp) direction.add(0f, speed, 0f)
+        if(goDown) direction.add(0f, -speed, 0f)
 
         direction.rotateY(yaw)
         WorldRenderer.camera.position.add(direction)
+
+        if(screenshotRequested) {
+            GameRenderer.screenshot()
+            screenshotRequested = false
+        }
     }
 }

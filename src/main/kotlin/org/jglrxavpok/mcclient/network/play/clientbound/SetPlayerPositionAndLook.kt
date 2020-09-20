@@ -1,6 +1,7 @@
 package org.jglrxavpok.mcclient.network.play.clientbound
 
 import io.netty.channel.ChannelHandlerContext
+import org.jglrxavpok.mcclient.input.Input
 import org.jglrxavpok.mcclient.network.NetworkSettings
 import org.jglrxavpok.mcclient.network.Serializable
 import org.jglrxavpok.mcclient.network.ServerPacket
@@ -19,8 +20,10 @@ class SetPlayerPositionAndLook: ServerPacket {
     @Serializable(6, DataType.VarInt) var teleportID: Int = 0
 
     override fun handle(networkSettings: NetworkSettings, ctx: ChannelHandlerContext) {
+        // TODO: cleaner code
         WorldRenderer.camera.position.set(x, y, z)
-        // TODO: rotation
+        Input.yaw = yaw/180f*Math.PI.toFloat()
+        Input.pitch = pitch/180f*Math.PI.toFloat()
         println("set position and look $x, $y, $z")
     }
 }

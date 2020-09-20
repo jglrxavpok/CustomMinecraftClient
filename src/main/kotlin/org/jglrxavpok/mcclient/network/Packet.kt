@@ -5,8 +5,8 @@ import io.netty.channel.ChannelHandlerContext
 import org.jglrxavpok.mcclient.network.data.DataType
 import java.lang.RuntimeException
 import kotlin.reflect.*
+import kotlin.reflect.full.*
 import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaField
 
 interface Packet {
@@ -16,7 +16,7 @@ interface Packet {
         private fun precomputeProps(klass: KClass<out Packet>): MutableList<Pair<KProperty1<out Packet, *>, Serializable>> {
             return cache.computeIfAbsent(klass) {
                 val result = mutableListOf<Pair<KProperty1<out Packet, *>, Serializable>>()
-                klass.memberProperties
+                klass.declaredMemberProperties
                         .mapNotNull {
                             val annot = it.findAnnotation<Serializable>() ?: return@mapNotNull null
                             it to annot

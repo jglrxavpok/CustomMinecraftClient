@@ -7,7 +7,12 @@ import org.joml.Matrix4fStack
 
 class VariantModel(val variants: Map<String, MinecraftModel>): MinecraftModel {
     override fun fillQuads(matrixStack: Matrix4fStack, meshBuilder: MeshBuilder, state: BlockState, x: Int, y: Int, z: Int) {
-        variants.getOrDefault(state.toStringKey(), MissingModel).fillQuads(matrixStack, meshBuilder, state, x, y, z)
+        val key = state.toStringKey()
+        if(variants.containsKey(key)) {
+            variants.getOrDefault(key, MissingModel).fillQuads(matrixStack, meshBuilder, state, x, y, z)
+        } else { // use default model, if any
+            variants.getOrDefault("", MissingModel).fillQuads(matrixStack, meshBuilder, state, x, y, z)
+        }
     }
 
     override fun textures(): List<Identifier> {

@@ -11,6 +11,7 @@ import org.jglrxavpok.mcclient.network.handshake.NetworkState
 import org.jglrxavpok.mcclient.network.login.LoginStart
 import org.jglrxavpok.mcclient.network.status.StatusRequestPacket
 import org.jglrxavpok.mcclient.rendering.GameRenderer
+import java.util.concurrent.LinkedTransferQueue
 import kotlin.concurrent.thread
 
 /**
@@ -20,12 +21,28 @@ object Client: ChannelInitializer<SocketChannel>() {
 
     val networkSettings = NetworkSettings(NetworkState.Handshake)
 
+    private var packetQueue = LinkedTransferQueue<Packet>()
+
     @JvmStatic
     fun main(args: Array<String>) {
         GameRenderer.init()
         setupNetty("127.0.0.1", 25565) {
             //requestStatus(it)
             login(it, "jglrxavpok")
+
+            while(networkSettings.state != NetworkState.Play) {
+                Thread.yield()
+            }
+            while(Game.running) {
+                synchronized(packetQueue) {
+                    while(packetQueue.isNotEmpty()) {
+                        val packet = packetQueue.poll()
+                        it.write(packet)
+                    }
+                    it.flush()
+                }
+                Thread.yield()
+            }
         }
         GameRenderer.loop()
     }
@@ -99,5 +116,11 @@ object Client: ChannelInitializer<SocketChannel>() {
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
         cause.printStackTrace()
         ctx.close()
+    }
+
+    fun sendPacket(packet: Packet) {
+        synchronized(packetQueue) {
+            packetQueue.add(packet)
+        }
     }
 }

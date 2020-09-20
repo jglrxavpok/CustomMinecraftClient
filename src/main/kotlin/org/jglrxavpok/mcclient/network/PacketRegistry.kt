@@ -6,6 +6,7 @@ import org.jglrxavpok.mcclient.network.login.LoginStart
 import org.jglrxavpok.mcclient.network.login.LoginSuccess
 import org.jglrxavpok.mcclient.network.login.SetCompression
 import org.jglrxavpok.mcclient.network.play.clientbound.*
+import org.jglrxavpok.mcclient.network.play.serverbound.PlayerPositionAndRotationPacket
 import org.jglrxavpok.mcclient.network.status.StatusRequestPacket
 import org.jglrxavpok.mcclient.network.status.StatusResponsePacket
 import kotlin.reflect.KClass
@@ -44,6 +45,7 @@ object PacketRegistries {
             .register(DeclareRecipes::class, 0x5A)
             .register(Tags::class, 0x5B)
     val serverBoundPlay = PacketRegistry("ServerBound Play")
+            .register(PlayerPositionAndRotationPacket::class, 0x13)
 
     fun getRegistry(state: NetworkState, direction: NetworkDirection): PacketRegistry {
         return when(state) {

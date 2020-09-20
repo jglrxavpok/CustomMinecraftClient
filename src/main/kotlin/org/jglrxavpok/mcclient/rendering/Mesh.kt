@@ -5,7 +5,7 @@ import org.lwjgl.opengl.GL30.*
 class Mesh(val vertexData: FloatArray, val indexData: IntArray) {
 
     companion object {
-        val Stride = 5*4
+        val Stride = 8*4
     }
 
     var vao: Int = -1
@@ -26,6 +26,8 @@ class Mesh(val vertexData: FloatArray, val indexData: IntArray) {
         glVertexAttribPointer(0, 3, GL_FLOAT, false, Stride, 0L)
         glEnableVertexAttribArray(1)
         glVertexAttribPointer(1, 2, GL_FLOAT, false, Stride, 3*4L)
+        glEnableVertexAttribArray(2)
+        glVertexAttribPointer(2, 3, GL_FLOAT, false, Stride, 5*4L)
 
         glBindVertexArray(0)
     }
