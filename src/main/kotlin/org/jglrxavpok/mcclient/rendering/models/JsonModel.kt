@@ -9,6 +9,7 @@ import org.jglrxavpok.mcclient.game.blocks.BlockState
 import org.jglrxavpok.mcclient.rendering.MeshBuilder
 import org.jglrxavpok.mcclient.rendering.WorldRenderer
 import org.joml.Matrix4fStack
+import org.joml.Vector3f
 
 class JsonModel(id: Identifier): MinecraftModel {
 
@@ -43,7 +44,7 @@ class JsonModel(id: Identifier): MinecraftModel {
 
     private fun copyParent(parentPath: Identifier) {
         val parent = JsonModelLoader.getOrLoad(parentPath)
-        faces += parent.faces.map { Face(it.texture, it.minX, it.minY, it.minZ, it.maxX, it.maxY, it.maxZ) }
+        faces += parent.faces.map { Face(it.texture, it.hasTint, it.minX, it.minY, it.minZ, it.maxX, it.maxY, it.maxZ) }
         textureMap += parent.textureMap
     }
 
@@ -61,25 +62,26 @@ class JsonModel(id: Identifier): MinecraftModel {
         for(faceName in Direction.values()) {
             val face = faceDescriptions.getAsJsonObject(faceName.name.toLowerCase()) ?: continue
             // TODO: cullface
+            val hasTint = face.has("tintindex")
             val texture = face.get("texture")?.asString ?: "#none"
             val compiledFace = when(faceName) {
                 Direction.North -> {
-                    Face(texture, minX, maxY, minZ, maxX, minY, minZ)
+                    Face(texture, hasTint, minX, maxY, minZ, maxX, minY, minZ)
                 }
                 Direction.South -> {
-                    Face(texture, minX, maxY, maxZ, maxX, minY, maxZ)
+                    Face(texture, hasTint, minX, maxY, maxZ, maxX, minY, maxZ)
                 }
                 Direction.East -> {
-                    Face(texture, minX, maxY, minZ, minX, minY, maxZ)
+                    Face(texture, hasTint, minX, maxY, minZ, minX, minY, maxZ)
                 }
                 Direction.West -> {
-                    Face(texture, maxX, maxY, minZ, maxX, minY, maxZ)
+                    Face(texture, hasTint, maxX, maxY, minZ, maxX, minY, maxZ)
                 }
                 Direction.Up -> {
-                    Face(texture, minX, maxY, minZ, maxX, maxY, maxZ)
+                    Face(texture, hasTint, minX, maxY, minZ, maxX, maxY, maxZ)
                 }
                 Direction.Down -> {
-                    Face(texture, minX, minY, minZ, maxX, minY, maxZ)
+                    Face(texture, hasTint, minX, minY, minZ, maxX, minY, maxZ)
                 }
             }
             faces += compiledFace
@@ -94,9 +96,9 @@ class JsonModel(id: Identifier): MinecraftModel {
         return Identifier(value);
     }
 
-    override fun fillQuads(matrixStack: Matrix4fStack, meshBuilder: MeshBuilder, state: BlockState, x: Int, y: Int, z: Int) {
+    override fun fillQuads(matrixStack: Matrix4fStack, meshBuilder: MeshBuilder, state: BlockState, x: Int, y: Int, z: Int, tintColor: Vector3f) {
         for(face in faces) {
-            face.fillQuad(matrixStack, meshBuilder)
+            face.fillQuad(matrixStack, meshBuilder, tintColor)
         }
     }
 
@@ -106,30 +108,39 @@ class JsonModel(id: Identifier): MinecraftModel {
                 .map { Identifier(it.value) }
     }
 
-    private inner class Face(val texture: String, val minX: Float, val minY: Float, val minZ: Float, val maxX: Float, val maxY: Float, val maxZ: Float) {
+    private inner class Face(val texture: String, val hasTint: Boolean, val minX: Float, val minY: Float, val minZ: Float, val maxX: Float, val maxY: Float, val maxZ: Float) {
 
         private val resolvedTexture by lazy { resolveTexture(texture) }
 
         private val horizontal get() = minY==maxY
 
-        fun fillQuad(matrixStack: Matrix4fStack, meshBuilder: MeshBuilder) {
+        fun fillQuad(matrixStack: Matrix4fStack, meshBuilder: MeshBuilder, tintColor: Vector3f) {
             val sprite = WorldRenderer.chunkRenderer.blockAtlas.getSprite(resolvedTexture)
             val minU = sprite.minU
             val maxU = sprite.maxU
             val minV = sprite.minV
             val maxV = sprite.maxV
+            val tint by lazy { Vector3f(1f) }
+            tint.set(1f)
+            if(hasTint)
+                tint.set(tintColor)
+
+            val r = tintColor.x
+            val g = tintColor.y
+            val b = tintColor.z
+
             if(horizontal) {
                 meshBuilder
-                        .vertex(matrixStack, minX, minY, minZ, minU, minV)
-                        .vertex(matrixStack, minX, minY, maxZ, minU, maxV)
-                        .vertex(matrixStack, maxX, minY, maxZ, maxU, maxV)
-                        .vertex(matrixStack, maxX, minY, minZ, maxU, minV)
+                        .vertex(matrixStack, minX, minY, minZ, minU, minV, r, g, b)
+                        .vertex(matrixStack, minX, minY, maxZ, minU, maxV, r, g, b)
+                        .vertex(matrixStack, maxX, minY, maxZ, maxU, maxV, r, g, b)
+                        .vertex(matrixStack, maxX, minY, minZ, maxU, minV, r, g, b)
             } else {
                 meshBuilder
-                        .vertex(matrixStack, minX, minY, minZ, minU, minV)
-                        .vertex(matrixStack, minX, maxY, minZ, minU, maxV)
-                        .vertex(matrixStack, maxX, maxY, maxZ, maxU, maxV)
-                        .vertex(matrixStack, maxX, minY, maxZ, maxU, minV)
+                        .vertex(matrixStack, minX, minY, minZ, minU, minV, r, g, b)
+                        .vertex(matrixStack, minX, maxY, minZ, minU, maxV, r, g, b)
+                        .vertex(matrixStack, maxX, maxY, maxZ, maxU, maxV, r, g, b)
+                        .vertex(matrixStack, maxX, minY, maxZ, maxU, minV, r, g, b)
             }
         }
     }

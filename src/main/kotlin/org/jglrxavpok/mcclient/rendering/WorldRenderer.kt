@@ -1,8 +1,6 @@
 package org.jglrxavpok.mcclient.rendering
 
 import org.jglrxavpok.mcclient.game.world.World
-import org.joml.Quaternionf
-import org.joml.Vector3f
 
 object WorldRenderer {
 
@@ -15,8 +13,12 @@ object WorldRenderer {
 
     fun render(world: World) {
         // TODO: optimize
-        for(chunk in world.chunks.values) {
-            chunkRenderer.renderChunk(chunk)
+        for(pass in RenderPass.values()) {
+            pass.use {
+                for(chunk in world.chunks.values) {
+                    chunkRenderer.renderChunk(chunk, pass)
+                }
+            }
         }
     }
 }

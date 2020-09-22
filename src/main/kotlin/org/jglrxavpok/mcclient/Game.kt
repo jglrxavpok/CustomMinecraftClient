@@ -1,6 +1,8 @@
 package org.jglrxavpok.mcclient
 
 import org.jglrxavpok.mcclient.game.world.World
+import org.jglrxavpok.mcclient.network.handshake.NetworkState
+import org.jglrxavpok.mcclient.network.play.serverbound.PlayerMovement
 import org.jglrxavpok.mcclient.network.play.serverbound.PlayerPositionAndRotationPacket
 import org.jglrxavpok.mcclient.rendering.GameRenderer
 import org.jglrxavpok.mcclient.rendering.WorldRenderer
@@ -25,12 +27,17 @@ object Game {
             time = 0.0
             val pos = getPlayerPosition()
 
-            /* TODO
-            Client.sendPacket(PlayerPositionAndRotationPacket().apply {
-                x = pos.x.toDouble()
-                feetY = pos.y.toDouble()
-                z = pos.z.toDouble()
-            })*/
+            if(Client.networkSettings.state == NetworkState.Play) {
+                Client.sendPacket(PlayerPositionAndRotationPacket().apply {
+                    x = pos.x.toDouble()
+                    feetY = pos.y.toDouble()
+                    z = pos.z.toDouble()
+                    onGround = false
+                })
+                Client.sendPacket(PlayerMovement().apply {
+                    onGround = false
+                })
+            }
         }
     }
 

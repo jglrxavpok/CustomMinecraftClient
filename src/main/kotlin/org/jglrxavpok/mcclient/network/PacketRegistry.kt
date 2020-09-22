@@ -6,6 +6,9 @@ import org.jglrxavpok.mcclient.network.login.LoginStart
 import org.jglrxavpok.mcclient.network.login.LoginSuccess
 import org.jglrxavpok.mcclient.network.login.SetCompression
 import org.jglrxavpok.mcclient.network.play.clientbound.*
+import org.jglrxavpok.mcclient.network.play.clientbound.KeepAlive as KeepAliveClient
+import org.jglrxavpok.mcclient.network.play.serverbound.KeepAlive as KeepAliveServer
+import org.jglrxavpok.mcclient.network.play.serverbound.PlayerMovement
 import org.jglrxavpok.mcclient.network.play.serverbound.PlayerPositionAndRotationPacket
 import org.jglrxavpok.mcclient.network.status.StatusRequestPacket
 import org.jglrxavpok.mcclient.network.status.StatusResponsePacket
@@ -36,6 +39,7 @@ object PacketRegistries {
             .register(PluginMessage::class, 0x17)
             .register(EntityStatus::class, 0x1A)
             .register(UnloadChunk::class, 0x1C)
+            .register(KeepAliveServer::class, 0x1F)
             .register(ChunkData::class, 0x20)
             .register(JoinGame::class, 0x24)
             .register(PlayerAbilitiesClientBound::class, 0x30)
@@ -45,7 +49,9 @@ object PacketRegistries {
             .register(DeclareRecipes::class, 0x5A)
             .register(Tags::class, 0x5B)
     val serverBoundPlay = PacketRegistry("ServerBound Play")
+            .register(KeepAliveClient::class, 0x10)
             .register(PlayerPositionAndRotationPacket::class, 0x13)
+            .register(PlayerMovement::class, 0x15)
 
     fun getRegistry(state: NetworkState, direction: NetworkDirection): PacketRegistry {
         return when(state) {

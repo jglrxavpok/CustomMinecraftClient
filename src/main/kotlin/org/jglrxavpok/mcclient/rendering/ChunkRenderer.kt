@@ -6,13 +6,12 @@ import org.jglrxavpok.hephaistos.mca.blockToChunk
 import org.jglrxavpok.mcclient.Game
 import org.jglrxavpok.mcclient.IO
 import org.jglrxavpok.mcclient.Identifier
-import org.jglrxavpok.mcclient.game.blocks.getDefaultState
-import org.jglrxavpok.mcclient.game.blocks.getIdentifier
-import org.jglrxavpok.mcclient.game.blocks.getModel
+import org.jglrxavpok.mcclient.game.blocks.*
 import org.jglrxavpok.mcclient.game.world.Chunk
 import org.jglrxavpok.mcclient.game.world.ChunkSection
 import org.jglrxavpok.mcclient.rendering.atlases.Atlas
 import org.joml.Matrix4fStack
+import org.joml.Vector3f
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 import kotlin.concurrent.thread
@@ -23,7 +22,7 @@ class ChunkRenderer(val camera: Camera) {
         private set
     lateinit var chunkShader: Shader
         private set
-    private var meshes = HashMap<ChunkSection, Mesh>()
+    private var meshes = HashMap<ChunkSection, PassAwareMeshes>()
     // is a chunk section being built?
     // allow parallel preparation of chunk meshes
     private var building = mutableMapOf<ChunkSection, Boolean>()
@@ -66,44 +65,45 @@ class ChunkRenderer(val camera: Camera) {
         blockAtlas = Atlas(textureMap)
     }
 
-    fun renderChunk(chunk: Chunk) {
+    fun renderChunk(chunk: Chunk, pass: RenderPass) {
         blockAtlas.bind()
         chunkShader.use {
             camera.updateShader(it)
             for(section in chunk.sections) {
-                renderSection(section)
+                renderSection(section, pass)
             }
         }
         // TODO: entities and such
     }
 
-    private fun renderSection(section: ChunkSection) {
+    private fun renderSection(section: ChunkSection, pass: RenderPass) {
         if(!meshes.containsKey(section)) {
             if(building[section] != true) { // false or null
                 buildMesh(section)
             }
         }
-        meshes[section]?.render()
+        meshes[section]?.getMesh(pass)?.render()
     }
 
     private fun buildMesh(section: ChunkSection) {
         building[section] = true
         thread {
             val matrixStack = Matrix4fStack(256).apply { identity() }.pushMatrix()
-            val meshBuilder = MeshBuilder()
+            val meshBuilders = MeshBuilders()
             for(y in 0..15) {
                 for(z in 0..15) {
                     for(x in 0..15) {
-                        val block = Block.fromStateId(section.getBlockID(x, y, z))
+                        val stateID = section.getBlockStateID(x, y, z)
+                        val block = Block.fromStateId(stateID)
                         if(shouldRender(block, section, x, y, z)) {
-                            renderBlock(matrixStack, block, meshBuilder, x+section.x*16, y+section.y*16, z+section.z*16)
+                            renderBlock(matrixStack, block, block.getAlternative(stateID).asBlockState(), meshBuilders, x+section.x*16, y+section.y*16, z+section.z*16)
                         }
                     }
                 }
             }
 
             GameRenderer.nextFrame {
-                meshes[section] = meshBuilder.toMesh()
+                meshes[section] = meshBuilders.toMeshes()
                 building[section] = false
             }
         }
@@ -114,7 +114,7 @@ class ChunkRenderer(val camera: Camera) {
         val sectionIndex = y/16
         if(sectionIndex !in 0..15) return Block.BEDROCK.blockId
         val section = chunk.sections[sectionIndex]
-        return section.getBlockID(x.blockInsideChunk(), y.blockInsideChunk(), z.blockInsideChunk())
+        return section.getBlockStateID(x.blockInsideChunk(), y.blockInsideChunk(), z.blockInsideChunk())
     }
 
     private fun shouldRender(block: Block, section: ChunkSection, x: Int, y: Int, z: Int): Boolean {
@@ -139,26 +139,31 @@ class ChunkRenderer(val camera: Camera) {
     // TODO: block states
     // TODO: block faces
     // TODO: use actual models
-    private fun renderBlock(matrixStack: Matrix4fStack, block: Block, meshBuilder: MeshBuilder, x: Int, y: Int, z: Int) {
+    private fun renderBlock(matrixStack: Matrix4fStack, block: Block, blockState: BlockState, meshBuilder: MeshBuilders, x: Int, y: Int, z: Int) {
         if(block == Block.AIR)
             return
         matrixStack.pushMatrix()
         matrixStack.translate(x.toFloat(), y.toFloat(), z.toFloat())
+        val tintColor by lazy { Vector3f(1f) }
+        tintColor.set(1f)
+        if(block.hasTint(Game.world, blockState, x, y, z)) {
+            block.fillTint(Game.world, blockState, x, y, z, tintColor)
+        }
         when {
             block.isLiquid -> {
-                // TODO: move to other special layer
-                renderLiquid(matrixStack, block, meshBuilder, x, y, z)
+                renderLiquid(matrixStack, block, meshBuilder, x, y, z, tintColor)
             }
 
             else -> {
                 val model = block.getModel()
-                model.backingModel.fillQuads(matrixStack, meshBuilder, /*TODO: get block state*/block.getDefaultState(), x, y, z)
+                // TODO: let models/block define pass
+                model.backingModel.fillQuads(matrixStack, meshBuilder.getBuilder(RenderPass.SOLID), blockState, x, y, z, tintColor)
             }
         }
         matrixStack.popMatrix()
     }
 
-    private fun renderLiquid(matrixStack: Matrix4fStack, block: Block, meshBuilder: MeshBuilder, x: Int, y: Int, z: Int) {
+    private fun renderLiquid(matrixStack: Matrix4fStack, block: Block, meshBuilders: MeshBuilders, x: Int, y: Int, z: Int, tintColor: Vector3f) {
         val top = Block.fromStateId(getBlockID(x, y +1, z))
         val bottom = Block.fromStateId(getBlockID(x, y -1, z))
         val east = Block.fromStateId(getBlockID(x +1, y, z))
@@ -180,11 +185,10 @@ class ChunkRenderer(val camera: Camera) {
         val minV = sprite.minV
         val maxV = sprite.maxV
         if(top != block) {
-            // TODO: don't hardcode water color
-            val r = if(block == Block.WATER) 0x3F/256f else 1f
-            val g = if(block == Block.WATER) 0x76/256f else 1f
-            val b = if(block == Block.WATER) 0xE4/256f else 1f
-            meshBuilder
+            val r = tintColor.x
+            val g = tintColor.y
+            val b = tintColor.z
+            meshBuilders.getBuilder(RenderPass.TRANSLUCENT)
                 .vertex(matrixStack, minX, maxY, minZ, minU, minV, r, g, b)
                 .vertex(matrixStack, maxX, maxY, minZ, maxU, minV, r, g, b)
                 .vertex(matrixStack, maxX, maxY, maxZ, maxU, maxV, r, g, b)
