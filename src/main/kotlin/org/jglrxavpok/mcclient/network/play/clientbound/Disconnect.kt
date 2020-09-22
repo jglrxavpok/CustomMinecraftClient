@@ -1,18 +1,16 @@
 package org.jglrxavpok.mcclient.network.play.clientbound
 
 import io.netty.channel.ChannelHandlerContext
-import org.jglrxavpok.mcclient.Client
 import org.jglrxavpok.mcclient.network.NetworkSettings
 import org.jglrxavpok.mcclient.network.Serializable
 import org.jglrxavpok.mcclient.network.ServerPacket
 import org.jglrxavpok.mcclient.network.data.DataType
-import org.jglrxavpok.mcclient.network.play.serverbound.KeepAlive as KeepAliveClient
 
-class KeepAlive: ServerPacket {
+class Disconnect: ServerPacket {
 
-    @Serializable(0, DataType.Long) var id: Long = 0
+    @Serializable(0, DataType.String) lateinit var message: String
 
     override fun handle(networkSettings: NetworkSettings, ctx: ChannelHandlerContext) {
-        Client.sendPacket(KeepAliveClient().apply { this.id = this@KeepAlive.id })
+        System.err.println("Disconnected from server, for reason: $message")
     }
 }
